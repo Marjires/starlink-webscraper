@@ -1,11 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 
-from webdriver_manager.chrome import ChromeDriverManager
-
+import chromedriver_autoinstaller
 import pandas as pd
 import time
 import re
@@ -13,67 +11,89 @@ import re
 
 def scrape_starlink():
 
-    # CHROME OPTIONS
+    chromedriver_autoinstaller.install()
+
     chrome_options = Options()
 
     chrome_options.add_argument(
         "--disable-blink-features=AutomationControlled"
     )
 
-    chrome_options.add_argument("--start-maximized")
+    chrome_options.add_argument(
+        "--start-maximized"
+    )
 
-    # START DRIVER
     driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
         options=chrome_options
     )
 
     actions = ActionChains(driver)
 
-    # OPEN STARLINK
-    driver.get("https://www.starlink.com")
+    try:
 
-    print("LOGIN MANUALLY")
+        # OPEN STARLINK
+        driver.get(
+            "https://www.starlink.com"
+        )
 
-    # WAIT FOR LOGIN
-    time.sleep(60)
+        print("=" * 60)
+        print("STARLINK LOGIN")
+        print("=" * 60)
 
-    # OPEN USAGE PAGE
-    driver.get(
-        "https://starlink.com/account/service-line/AST-2293597-46342-54?selectedDevice=ut01000000-00000000-0060d786&page=0&limit=5"
-    )
+        input(
+            "\n1. Login to Starlink\n"
+            "2. Open the Usage Dashboard\n"
+            "3. Make sure you can see the usage graph\n"
+            "4. Press ENTER here to start scraping\n\n"
+        )
 
-    # WAIT PAGE LOAD
-    time.sleep(10)
+        time.sleep(3)
 
-    all_data = []
+        print("\nCURRENT PAGE:")
+        print(driver.current_url)
+        print(driver.title)
 
-    # MONTH TABS
-    month_tabs = [
-        "Nov",
-        "Dec",
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May - Jun"
-    ]
+        all_data = []
 
-    # FIND BUTTONS
-    buttons = driver.find_elements(By.TAG_NAME, "button")
+        # Adjust if Starlink changes labels
+        month_tabs = [
+            "Nov",
+            "Dec",
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+        ]
 
-    # LOOP MONTH TABS
-    for button in buttons:
+        buttons = driver.find_elements(
+            By.TAG_NAME,
+            "button"
+        )
 
-        try:
+        print("\nFOUND BUTTONS:")
 
-            month_text = button.text.strip()
+        for btn in buttons:
 
-            if month_text in month_tabs:
+            try:
+                print(btn.text)
+            except:
+                pass
 
-                print(f"\nCLICKING MONTH: {month_text}")
+        for button in buttons:
 
-                # CLICK TAB
+            try:
+
+                month_text = button.text.strip()
+
+                if month_text not in month_tabs:
+                    continue
+
+                print(
+                    f"\nSCRAPING MONTH: {month_text}"
+                )
+
                 driver.execute_script(
                     "arguments[0].click();",
                     button
@@ -81,45 +101,40 @@ def scrape_starlink():
 
                 time.sleep(3)
 
-                # REFRESH BARS
                 bars = driver.find_elements(
                     By.CSS_SELECTOR,
                     "svg rect"
                 )
 
-                print("BARS FOUND:", len(bars))
+                print(
+                    f"BARS FOUND: {len(bars)}"
+                )
 
-                # LOOP THROUGH BARS
                 for i in range(len(bars)):
 
                     try:
 
-                        # REFRESH BARS EACH LOOP
                         bars = driver.find_elements(
                             By.CSS_SELECTOR,
                             "svg rect"
                         )
 
-                        # PREVENT INDEX ERROR
                         if i >= len(bars):
                             break
 
                         bar = bars[i]
 
-                        # SCROLL TO BAR
                         driver.execute_script(
                             "arguments[0].scrollIntoView();",
                             bar
                         )
 
-                        # HOVER BAR
                         actions.move_to_element(
                             bar
-                        ).pause(1).perform()
+                        ).perform()
 
                         time.sleep(1)
 
-                        # GET TOOLTIP DIVS
                         tooltips = driver.find_elements(
                             By.CSS_SELECTOR,
                             "div"
@@ -127,23 +142,23 @@ def scrape_starlink():
 
                         for tooltip in tooltips:
 
-                            tooltip_text = tooltip.text.strip()
+                            text = tooltip.text.strip()
 
-                            # MUST CONTAIN GB
-                            if "GB" not in tooltip_text:
+                            if "GB" not in text:
                                 continue
 
-                            lines = tooltip_text.split("\n")
+                            lines = text.split("\n")
 
-                            # NEED DATE + VALUE
                             if len(lines) < 2:
                                 continue
 
                             date = lines[0].strip()
+
                             usage_line = lines[-1].strip()
 
-                            # VALID DATE
-                            date_pattern = r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{1,2}$"
+                            date_pattern = (
+                                r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{1,2}$"
+                            )
 
                             if not re.match(
                                 date_pattern,
@@ -151,7 +166,6 @@ def scrape_starlink():
                             ):
                                 continue
 
-                            # EXTRACT NUMBER
                             usage_match = re.search(
                                 r"\d+(\.\d+)?",
                                 usage_line
@@ -164,8 +178,7 @@ def scrape_starlink():
                                 usage_match.group()
                             )
 
-                            # REMOVE 0 VALUES
-                            if usage == 0:
+                            if usage <= 0:
                                 continue
 
                             entry = {
@@ -173,37 +186,70 @@ def scrape_starlink():
                                 "Data Usage (GB)": usage
                             }
 
-                            # REMOVE DUPLICATES
                             if entry not in all_data:
 
-                                all_data.append(entry)
+                                all_data.append(
+                                    entry
+                                )
 
                                 print(entry)
 
                     except Exception as e:
-                        print("BAR ERROR:", e)
 
-        except Exception as e:
-            print("MONTH ERROR:", e)
+                        print(
+                            "BAR ERROR:",
+                            str(e)
+                        )
 
-    # CLOSE DRIVER
-    driver.quit()
+            except Exception as e:
 
-    # CREATE DATAFRAME
-    df = pd.DataFrame(all_data)
+                print(
+                    "MONTH ERROR:",
+                    str(e)
+                )
 
-    # REMOVE DUPLICATES
-    df = df.drop_duplicates()
+        driver.quit()
 
-    # SORT DATA
-    df = df.sort_values(by="Date")
+        df = pd.DataFrame(
+            all_data
+        )
 
-    # SAVE CSV
-    df.to_csv(
-        "starlink_usage.csv",
-        index=False
-    )
+        if len(df) > 0:
 
-    print("\nCSV SAVED SUCCESSFULLY")
+            df = df.drop_duplicates()
 
-    return df
+            df.to_csv(
+                "starlink_usage.csv",
+                index=False
+            )
+
+            print(
+                "\nCSV SAVED SUCCESSFULLY"
+            )
+
+        else:
+
+            print(
+                "\nNO DATA FOUND"
+            )
+
+        return df
+
+    except Exception as e:
+
+        print(
+            "\nSCRAPER ERROR:",
+            str(e)
+        )
+
+        driver.quit()
+
+        return pd.DataFrame()
+
+
+if __name__ == "__main__":
+
+    df = scrape_starlink()
+
+    print(df.head())
+
