@@ -68,6 +68,7 @@ Or download the ZIP file and extract it.
 
 Open the project folder in Visual Studio Code.
 
+add templates and static folder then move the html and css file to designated folder.
 ---
 
 ### Step 3: Install Dependencies
