@@ -1,113 +1,1446 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starlink Usage Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <title>Starlink Usage Dashboard</title>
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1421;
+    --bg3: #121929;
+    --card: #111827;
+    --card-border: rgba(99,179,237,0.12);
+    --accent: #63b3ed;
+    --accent2: #4fd1c5;
+    --accent3: #f6ad55;
+    --accent4: #fc8181;
+    --text: #e8f0fe;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --glow: rgba(99,179,237,0.08);
+    --font: 'DM Sans', sans-serif;
+    --mono: 'Space Mono', monospace;
+  }
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+  html { scroll-behavior: smooth; }
 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* STAR FIELD */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 22%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 80% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 35% 55%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 48% 28%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 73% 52%, rgba(255,255,255,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 22% 65%, rgba(255,255,255,0.45) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* AURORA GLOW */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 500px;
+    background: radial-gradient(ellipse, rgba(99,179,237,0.04) 0%, rgba(79,209,197,0.02) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* HEADER */
+  header {
+    padding: 36px 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--card-border);
+    margin-bottom: 36px;
+  }
+
+  .logo-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a2a4a, #0d1a30);
+    border: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo-title {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.04em;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(79,209,197,0.08);
+    border: 1px solid rgba(79,209,197,0.2);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .last-updated {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-bottom: 14px;
+  }
+
+  /* METRIC CARDS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 900px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .header-right { flex-direction: column; align-items: flex-start; }
+  }
+
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .metric-card:hover {
+    border-color: rgba(99,179,237,0.25);
+    transform: translateY(-2px);
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .metric-card.blue::before { background: linear-gradient(90deg, #63b3ed, #4299e1); }
+  .metric-card.teal::before { background: linear-gradient(90deg, #4fd1c5, #38b2ac); }
+  .metric-card.amber::before { background: linear-gradient(90deg, #f6ad55, #ed8936); }
+  .metric-card.red::before { background: linear-gradient(90deg, #fc8181, #f56565); }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    margin-bottom: 10px;
+  }
+
+  .metric-value {
+    font-size: 32px;
+    font-weight: 300;
+    font-family: var(--mono);
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .metric-value span {
+    font-size: 14px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+
+  .metric-sub {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .metric-sub strong {
+    font-weight: 500;
+  }
+
+  .metric-sub.up { color: var(--accent2); }
+  .metric-sub.down { color: var(--accent4); }
+
+  /* CHART CARDS */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .charts-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 860px) {
+    .charts-row, .charts-row-2 { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .chart-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .chart-subtitle {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .chart-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+  }
+
+  .badge-blue { background: rgba(99,179,237,0.1); color: var(--accent); border: 1px solid rgba(99,179,237,0.2); }
+  .badge-teal { background: rgba(79,209,197,0.1); color: var(--accent2); border: 1px solid rgba(79,209,197,0.2); }
+  .badge-amber { background: rgba(246,173,85,0.1); color: var(--accent3); border: 1px solid rgba(246,173,85,0.2); }
+
+  /* FILTER ROW */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-right: 4px;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .filter-btn:hover {
+    border-color: rgba(99,179,237,0.3);
+    color: var(--accent);
+    background: rgba(99,179,237,0.06);
+  }
+
+  .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(99,179,237,0.1);
+  }
+
+  /* TABLE */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .table-header {
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    padding: 12px 24px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: var(--mono);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(99,179,237,0.05);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(99,179,237,0.04); }
+
+  tbody td {
+    padding: 12px 24px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  td.date-col { color: var(--text); font-weight: 400; }
+
+  .usage-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .usage-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: rgba(99,179,237,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    max-width: 120px;
+  }
+
+  .usage-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #63b3ed, #4fd1c5);
+  }
+
+  .usage-val {
+    min-width: 48px;
+    text-align: right;
+  }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+
+  .rank-1 { background: rgba(246,173,85,0.15); color: var(--accent3); border: 1px solid rgba(246,173,85,0.3); }
+  .rank-2 { background: rgba(99,179,237,0.1); color: var(--accent); border: 1px solid rgba(99,179,237,0.2); }
+  .rank-3 { background: rgba(79,209,197,0.1); color: var(--accent2); border: 1px solid rgba(79,209,197,0.2); }
+  .rank-n { background: rgba(100,116,139,0.1); color: var(--text3); border: 1px solid rgba(100,116,139,0.15); }
+
+  /* PAGINATION */
+  .pagination {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--card-border);
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .page-btns { display: flex; gap: 6px; }
+
+  .page-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-btn:hover, .page-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(99,179,237,0.08);
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* SATELLITE ORBIT ANIMATION in chart card */
+  .orbit-bg {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+  }
+
+  .orbit-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    animation: orbit 6s linear infinite;
+  }
+
+  .orbit-dot {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  @keyframes orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 8px;
+    background: rgba(99,179,237,0.08);
+    border: 1px solid rgba(99,179,237,0.2);
+    color: var(--accent);
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .export-btn:hover {
+    background: rgba(99,179,237,0.15);
+    border-color: rgba(99,179,237,0.4);
+  }
+
+  .collect-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(79,209,197,0.15), rgba(99,179,237,0.1));
+    border: 1px solid rgba(79,209,197,0.35);
+    color: var(--accent2);
+    font-size: 13px;
+    font-family: var(--mono);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .collect-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(79,209,197,0.1), rgba(99,179,237,0.05));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .collect-btn:hover::before { opacity: 1; }
+
+  .collect-btn:hover {
+    border-color: rgba(79,209,197,0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(79,209,197,0.15);
+  }
+
+  .collect-btn:active { transform: translateY(0); }
+
+  .collect-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .collect-btn .btn-icon {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s;
+  }
+
+  .collect-btn:hover .btn-icon { transform: rotate(15deg); }
+
+  .collect-btn.loading .btn-icon {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* SCRAPING OVERLAY */
+  .scrape-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(8,12,20,0.92);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .scrape-overlay.active { display: flex; }
+
+  .scrape-card {
+    background: #111827;
+    border: 1px solid rgba(79,209,197,0.2);
+    border-radius: 20px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 420px;
+    width: 90%;
+  }
+
+  .scrape-spinner {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+
+  .scrape-spinner .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+  }
+
+  .scrape-spinner .ring-1 {
+    border-top-color: var(--accent2);
+    animation: spin 1.2s linear infinite;
+  }
+
+  .scrape-spinner .ring-2 {
+    inset: 8px;
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite reverse;
+  }
+
+  .scrape-spinner .ring-3 {
+    inset: 16px;
+    border-top-color: var(--accent3);
+    animation: spin 1.6s linear infinite;
+  }
+
+  .scrape-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .scrape-msg {
+    font-size: 13px;
+    color: var(--text3);
+    font-family: var(--mono);
+    line-height: 1.7;
+  }
+
+  .scrape-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent2);
+    background: rgba(79,209,197,0.08);
+    border: 1px solid rgba(79,209,197,0.15);
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-top: 16px;
+  }
+
+  .step-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 200;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast.success {
+    background: rgba(79,209,197,0.12);
+    border: 1px solid rgba(79,209,197,0.3);
+    color: var(--accent2);
+  }
+
+  .toast.error {
+    background: rgba(252,129,129,0.12);
+    border: 1px solid rgba(252,129,129,0.3);
+    color: var(--accent4);
+  }
+</style>
 </head>
-
 <body>
+<div class="wrapper">
 
-<div class="container">
-
-    <header>
-
-        <h1>
-            STAR<span>LINK</span> USAGE
-        </h1>
-
-        <p>
-            Daily Data Consumption Dashboard
-        </p>
-
-        <form
-            action="/collect-data"
-            method="POST">
-
-            <button
-                type="submit"
-                class="btn">
-
-                Collect Data
-
-            </button>
-
-        </form>
-
-    </header>
-
-    <div class="stats">
-
-        <div class="card">
-            <h2>{{ total }}</h2>
-            <p>Total Usage (GB)</p>
-        </div>
-
-        <div class="card">
-            <h2>{{ avg }}</h2>
-            <p>Average Usage (GB)</p>
-        </div>
-
-        <div class="card">
-            <h2>{{ peak }}</h2>
-            <p>Peak Usage (GB)</p>
-        </div>
-
-        <div class="card">
-            <h2>{{ days }}</h2>
-            <p>Days Tracked</p>
-        </div>
+  <!-- HEADER -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-icon">
+        <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="4" stroke="#63b3ed" stroke-width="1.5"/>
+          <ellipse cx="11" cy="11" rx="10" ry="4.5" stroke="#4fd1c5" stroke-width="1" stroke-dasharray="3 2"/>
+          <ellipse cx="11" cy="11" rx="4.5" ry="10" stroke="#4fd1c5" stroke-width="1" stroke-dasharray="3 2"/>
+          <circle cx="11" cy="1.2" r="1.5" fill="#63b3ed"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-title">STARLINK</div>
+        <div class="logo-sub">Data Usage Analytics</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="collect-btn" id="collect-btn" onclick="startCollect()">
+        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/>
+          <circle cx="8" cy="8" r="2.5" fill="currentColor"/>
+          <path d="M8 1.5 L8 4M8 12 L8 14.5M1.5 8 L4 8M12 8 L14.5 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Collect Data
+      </button>
+      <div class="status-pill" id="last-scraped-pill">
+        <div class="status-dot"></div>
+        <span id="last-scraped-txt">Never scraped</span>
+      </div>
 
     </div>
+  </header>
 
-    <div class="table-container">
-
-        <h2>Daily Breakdown</h2>
-
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>#</th>
-                    <th>Date</th>
-                    <th>Usage (GB)</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-            {% for row in records %}
-
-                <tr>
-
-                    <td>{{ loop.index }}</td>
-
-                    <td>
-                        {{ row['Date'] }}
-                    </td>
-
-                    <td>
-                        {{ row['Data Usage (GB)'] }}
-                    </td>
-
-                </tr>
-
-            {% endfor %}
-
-            </tbody>
-
-        </table>
-
+  <!-- SCRAPING OVERLAY -->
+  <div class="scrape-overlay" id="scrape-overlay">
+    <div class="scrape-card">
+      <div class="scrape-spinner">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+      </div>
+      <div class="scrape-title">Scraping Starlink Data</div>
+      <div class="scrape-msg" id="scrape-msg">Chrome is launching and navigating to<br>starlink.com — please log in when prompted.</div>
+      <div class="scrape-step">
+        <div class="step-dot"></div>
+        <span id="scrape-step-txt">Launching browser...</span>
+      </div>
     </div>
+  </div>
 
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- FILTER ROW -->
+  <div class="filter-row">
+    <span class="filter-label">Period:</span>
+    <button class="filter-btn active" onclick="filterMonth('ALL')">All Time</button>
+    <button class="filter-btn" onclick="filterMonth('Nov')">Nov</button>
+    <button class="filter-btn" onclick="filterMonth('Dec')">Dec</button>
+    <button class="filter-btn" onclick="filterMonth('Jan')">Jan</button>
+    <button class="filter-btn" onclick="filterMonth('Feb')">Feb</button>
+    <button class="filter-btn" onclick="filterMonth('Mar')">Mar</button>
+    <button class="filter-btn" onclick="filterMonth('Apr')">Apr</button>
+    <button class="filter-btn" onclick="filterMonth('May')">May</button>
+    <button class="filter-btn" onclick="filterMonth('Jun')">Jun</button>
+  </div>
+
+  <!-- METRIC CARDS -->
+  <div class="section-label">Key Metrics</div>
+  <div class="metrics-grid" id="metrics-grid">
+    <div class="metric-card blue">
+      <div class="metric-label">Total Usage</div>
+      <div class="metric-value" id="m-total">—<span> GB</span></div>
+      <div class="metric-sub" id="m-total-sub">All recorded days</div>
+    </div>
+    <div class="metric-card teal">
+      <div class="metric-label">Daily Average</div>
+      <div class="metric-value" id="m-avg">—<span> GB</span></div>
+      <div class="metric-sub" id="m-avg-sub">Across all days</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="metric-label">Peak Day</div>
+      <div class="metric-value" id="m-peak">—<span> GB</span></div>
+      <div class="metric-sub" id="m-peak-sub">Highest recorded</div>
+    </div>
+    <div class="metric-card red">
+      <div class="metric-label">Active Days</div>
+      <div class="metric-value" id="m-days">—</div>
+      <div class="metric-sub" id="m-days-sub">Days with data</div>
+    </div>
+  </div>
+
+  <!-- MAIN CHART + MONTH DISTRIBUTION -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-title">Daily Usage Timeline</div>
+          <div class="chart-subtitle">Data consumption in GB per day</div>
+        </div>
+        <span class="chart-badge badge-blue" id="timeline-badge">All Months</span>
+      </div>
+      <div style="position: relative; width: 100%; height: 240px;">
+        <canvas id="timelineChart" role="img" aria-label="Daily Starlink usage timeline in GB"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-title">Monthly Totals</div>
+          <div class="chart-subtitle">GB consumed per month</div>
+        </div>
+        <span class="chart-badge badge-teal">8 Months</span>
+      </div>
+      <div style="position: relative; width: 100%; height: 240px;">
+        <canvas id="monthlyChart" role="img" aria-label="Monthly total usage bar chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY AVG + DISTRIBUTION -->
+  <div class="charts-row-2">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-title">Usage Distribution</div>
+          <div class="chart-subtitle">Frequency of daily usage ranges</div>
+        </div>
+        <span class="chart-badge badge-blue">Histogram</span>
+      </div>
+      <div style="position: relative; width: 100%; height: 210px;">
+        <canvas id="histoChart" role="img" aria-label="Histogram of daily usage values"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-title">Monthly Average</div>
+          <div class="chart-subtitle">Mean GB per day each month</div>
+        </div>
+        <span class="chart-badge badge-amber">Trend</span>
+      </div>
+      <div style="position: relative; width: 100%; height: 210px;">
+        <canvas id="avgChart" role="img" aria-label="Monthly average daily usage line chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="chart-title">Top Usage Days</div>
+        <div class="chart-subtitle" id="table-sub">Ranked by data consumption</div>
+      </div>
+      <a href="starlink_usage.csv" download class="export-btn">
+        ↓ Export CSV
+      </a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px">Rank</th>
+          <th>Date</th>
+          <th>Month</th>
+          <th>Usage (GB)</th>
+          <th style="min-width:200px">Relative Usage</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div class="pagination">
+      <span id="page-info">Showing 1–10</span>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Starlink Usage Analytics Dashboard · Built with Selenium + Flask</span>
+    <span id="footer-count"></span>
+  </footer>
 </div>
 
+<script>
+
+const RAW = [
+
+{% for row in records %}
+{
+    date: "{{ row['Date'] }}",
+    gb: parseFloat("{{ row['Data Usage (GB)'] }}")
+},
+{% endfor %}
+
+];
+
+const MONTH_ORDER = ['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+const MONTH_COLORS = {
+  Nov: '#63b3ed', Dec: '#4fd1c5', Jan: '#f6ad55',
+  Feb: '#fc8181', Mar: '#68d391', Apr: '#b794f4',
+  May: '#f687b3', Jun: '#76e4f7'
+};
+
+function getMonth(d) { return d.date.split(' ')[0]; }
+function getDay(d) { return parseInt(d.date.split(' ')[1]); }
+
+function sortByDate(arr) {
+  return [...arr].sort((a,b) => {
+    const mi = MONTH_ORDER.indexOf(getMonth(a));
+    const mj = MONTH_ORDER.indexOf(getMonth(b));
+    if (mi !== mj) return mi - mj;
+    return getDay(a) - getDay(b);
+  });
+}
+
+let currentFilter = 'ALL';
+let currentPage = 1;
+const PAGE_SIZE = 10;
+
+let timelineChart, monthlyChart, histoChart, avgChart;
+
+function getFiltered() {
+  if (currentFilter === 'ALL') return RAW;
+  return RAW.filter(d => getMonth(d) === currentFilter);
+}
+
+function updateMetrics(data) {
+  if (!data.length) {
+    ['m-total','m-avg','m-peak','m-days'].forEach(id => {
+      document.getElementById(id).innerHTML = '—';
+    });
+    document.getElementById('m-total-sub').textContent = 'No data yet';
+    document.getElementById('m-avg-sub').textContent = 'Collect data to begin';
+    document.getElementById('m-peak-sub').textContent = '—';
+    document.getElementById('m-days-sub').textContent = 'Click Collect Data';
+    return;
+  }
+  const total = data.reduce((s,d) => s+d.gb, 0);
+  const avg = total / data.length;
+  const peak = Math.max(...data.map(d => d.gb));
+  const peakDay = data.find(d => d.gb === peak);
+  document.getElementById('m-total').innerHTML = total.toFixed(1) + '<span> GB</span>';
+  document.getElementById('m-avg').innerHTML = avg.toFixed(1) + '<span> GB</span>';
+  document.getElementById('m-peak').innerHTML = peak.toFixed(1) + '<span> GB</span>';
+  document.getElementById('m-days').innerHTML = data.length;
+  document.getElementById('m-total-sub').textContent = `${data.length} days recorded`;
+  document.getElementById('m-avg-sub').textContent = `${avg < 10 ? 'Low' : avg < 20 ? 'Moderate' : 'High'} consumption`;
+  document.getElementById('m-peak-sub').textContent = peakDay ? peakDay.date : '—';
+  document.getElementById('m-days-sub').textContent = currentFilter === 'ALL' ? '6 months total' : `In ${currentFilter}`;
+}
+
+function updateTimeline(data) {
+  const sorted = sortByDate(data);
+  const labels = sorted.map(d => d.date);
+  const values = sorted.map(d => d.gb);
+  const colors = sorted.map(d => MONTH_COLORS[getMonth(d)] || '#63b3ed');
+
+  if (timelineChart) timelineChart.destroy();
+  timelineChart = new Chart(document.getElementById('timelineChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'GB',
+        data: values,
+        backgroundColor: colors.map(c => c + '99'),
+        borderColor: colors,
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#94a3b8',
+          padding: 10,
+          callbacks: {
+            label: ctx => `${ctx.parsed.y.toFixed(1)} GB`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 9 }, autoSkip: true, maxRotation: 45 },
+          grid: { color: 'rgba(99,179,237,0.05)' },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 10 }, callback: v => v + ' GB' },
+          grid: { color: 'rgba(99,179,237,0.05)' },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        }
+      }
+    }
+  });
+  document.getElementById('timeline-badge').textContent = currentFilter === 'ALL' ? 'All Months' : currentFilter;
+}
+
+function updateMonthly() {
+  const byMonth = {};
+  MONTH_ORDER.forEach(m => { byMonth[m] = 0; });
+  RAW.forEach(d => { byMonth[getMonth(d)] = (byMonth[getMonth(d)] || 0) + d.gb; });
+  const labels = MONTH_ORDER;
+  const vals = labels.map(m => parseFloat(byMonth[m].toFixed(1)));
+  const colors = labels.map(m => MONTH_COLORS[m]);
+
+  if (monthlyChart) monthlyChart.destroy();
+  monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Total GB',
+        data: vals,
+        backgroundColor: colors.map(c => c + 'aa'),
+        borderColor: colors,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(79,209,197,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#94a3b8',
+          padding: 10,
+          callbacks: { label: ctx => `${ctx.parsed.y.toFixed(1)} GB total` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 11 } },
+          grid: { display: false },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 10 }, callback: v => v + ' GB' },
+          grid: { color: 'rgba(99,179,237,0.05)' },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+function updateHisto(data) {
+  const buckets = [0,0,0,0,0,0,0];
+  const labels = ['0–5','5–10','10–15','15–20','20–25','25–35','35+'];
+  const limits = [[0,5],[5,10],[10,15],[15,20],[20,25],[25,35],[35,Infinity]];
+  data.forEach(d => {
+    for (let i=0;i<limits.length;i++) {
+      if (d.gb >= limits[i][0] && d.gb < limits[i][1]) { buckets[i]++; break; }
+    }
+  });
+  if (histoChart) histoChart.destroy();
+  histoChart = new Chart(document.getElementById('histoChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Days',
+        data: buckets,
+        backgroundColor: 'rgba(99,179,237,0.35)',
+        borderColor: '#63b3ed',
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#94a3b8',
+          padding: 10,
+          callbacks: { label: ctx => `${ctx.parsed.y} days` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 10 } },
+          grid: { display: false },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 10 }, stepSize: 1 },
+          grid: { color: 'rgba(99,179,237,0.05)' },
+          border: { color: 'rgba(99,179,237,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+function updateAvg() {
+  const byMonth = {};
+  const countByMonth = {};
+  MONTH_ORDER.forEach(m => { byMonth[m] = 0; countByMonth[m] = 0; });
+  RAW.forEach(d => {
+    const m = getMonth(d);
+    byMonth[m] = (byMonth[m]||0) + d.gb;
+    countByMonth[m] = (countByMonth[m]||0) + 1;
+  });
+  const labels = MONTH_ORDER;
+  const vals = labels.map(m => parseFloat((byMonth[m]/countByMonth[m]).toFixed(1)));
+
+  if (avgChart) avgChart.destroy();
+  avgChart = new Chart(document.getElementById('avgChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Avg GB/day',
+        data: vals,
+        borderColor: '#f6ad55',
+        backgroundColor: 'rgba(246,173,85,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#f6ad55',
+        pointBorderColor: '#111827',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        tension: 0.35,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(246,173,85,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#94a3b8',
+          padding: 10,
+          callbacks: { label: ctx => `${ctx.parsed.y.toFixed(1)} GB avg` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 11 } },
+          grid: { color: 'rgba(246,173,85,0.05)' },
+          border: { color: 'rgba(246,173,85,0.1)' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { family: 'Space Mono', size: 10 }, callback: v => v + ' GB' },
+          grid: { color: 'rgba(246,173,85,0.05)' },
+          border: { color: 'rgba(246,173,85,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+function updateTable(data) {
+  const tbody = document.getElementById('table-body');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px 24px;color:var(--text3);font-family:var(--mono);font-size:13px;">
+      No data collected yet — click <span style="color:var(--accent2)">Collect Data</span> to scrape Starlink
+    </td></tr>`;
+    document.getElementById('page-info').textContent = 'No records';
+    document.getElementById('page-btns').innerHTML = '';
+    document.getElementById('table-sub').textContent = 'No data yet';
+    document.getElementById('footer-count').textContent = '0 data points';
+    return;
+  }
+  const sorted = [...data].sort((a,b) => b.gb - a.gb);
+  const total = sorted.reduce((s,d) => s+d.gb, 0);
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageData = sorted.slice(start, start + PAGE_SIZE);
+
+  tbody.innerHTML = '';
+  pageData.forEach((d, i) => {
+    const rank = start + i + 1;
+    const rankClass = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-n';
+    const pct = (d.gb / Math.max(...data.map(x=>x.gb)) * 100).toFixed(0);
+    const month = getMonth(d);
+    const mColor = MONTH_COLORS[month] || '#63b3ed';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+      <td class="date-col">${d.date}</td>
+      <td><span style="padding:3px 8px;border-radius:5px;font-size:11px;background:${mColor}18;color:${mColor};border:1px solid ${mColor}33;">${month}</span></td>
+      <td>
+        <div class="usage-bar-wrap">
+          <span class="usage-val">${d.gb.toFixed(1)}</span>
+        </div>
+      </td>
+      <td>
+        <div class="usage-bar-wrap">
+          <div class="usage-bar-bg"><div class="usage-bar-fill" style="width:${pct}%"></div></div>
+          <span style="font-size:11px;color:#64748b">${pct}%</span>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('page-info').textContent = `Showing ${start+1}–${Math.min(start+PAGE_SIZE, sorted.length)} of ${sorted.length}`;
+  document.getElementById('table-sub').textContent = `${sorted.length} entries, ranked by consumption`;
+  document.getElementById('footer-count').textContent = `${RAW.length} total data points`;
+
+  const pbtn = document.getElementById('page-btns');
+  pbtn.innerHTML = '';
+  for (let p=1; p<=totalPages; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (p===currentPage?' active':'');
+    btn.textContent = p;
+    btn.onclick = () => { currentPage = p; updateTable(getFiltered()); };
+    pbtn.appendChild(btn);
+  }
+}
+
+function filterMonth(m) {
+  currentFilter = m;
+  currentPage = 1;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === (m==='ALL'?'All Time':m));
+  });
+  const data = getFiltered();
+  updateMetrics(data);
+  updateTimeline(data);
+  updateHisto(data);
+  updateTable(data);
+}
+
+function timeAgo(isoStr) {
+  if (!isoStr) return 'Never scraped';
+  const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) { const m = Math.floor(diff/60); return m + ' min' + (m!==1?'s':'') + ' ago'; }
+  if (diff < 86400) { const h = Math.floor(diff/3600); return h + ' hr' + (h!==1?'s':'') + ' ago'; }
+  const d = Math.floor(diff/86400); return d + ' day' + (d!==1?'s':'') + ' ago';
+}
+
+let _lastScrapedTs = null;
+
+function updateLastScraped(isoStr) {
+  _lastScrapedTs = isoStr;
+  const txt = document.getElementById('last-scraped-txt');
+  const dot = document.querySelector('#last-scraped-pill .status-dot');
+  const pill = document.getElementById('last-scraped-pill');
+  if (!isoStr) {
+    txt.textContent = 'Never scraped';
+    dot.style.background = '#64748b';
+    pill.style.color = '#64748b';
+    return;
+  }
+  txt.textContent = 'Last scraped: ' + timeAgo(isoStr);
+  dot.style.background = '#4fd1c5';
+  pill.style.color = '#4fd1c5';
+}
+
+function init() {
+  fetch('/last-scraped')
+    .then(r => r.json())
+    .then(d => {
+      updateLastScraped(d.timestamp);
+      setInterval(() => updateLastScraped(_lastScrapedTs), 30000);
+    })
+    .catch(() => updateLastScraped(null));
+
+  const data = getFiltered();
+  updateMetrics(data);
+  updateTimeline(data);
+  updateMonthly();
+  updateHisto(data);
+  updateAvg();
+  updateTable(data);
+}
+
+init();
+
+// ── COLLECT DATA ──────────────────────────────────────────────
+const STEPS = [
+  'Launching Chrome browser...',
+  'Navigating to starlink.com...',
+  'Waiting for login (60s)...',
+  'Opening usage dashboard...',
+  'Scraping monthly data...',
+  'Parsing tooltips & dates...',
+  'Saving to CSV...',
+];
+
+let stepInterval = null;
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => { t.className = 'toast ' + type; }, 4000);
+}
+
+function startCollect() {
+  const btn = document.getElementById('collect-btn');
+  const overlay = document.getElementById('scrape-overlay');
+  const stepTxt = document.getElementById('scrape-step-txt');
+  const msg = document.getElementById('scrape-msg');
+
+  btn.classList.add('loading');
+  btn.textContent = ' Collecting...';
+  overlay.classList.add('active');
+
+  let si = 0;
+  stepTxt.textContent = STEPS[0];
+  stepInterval = setInterval(() => {
+    si = (si + 1) % STEPS.length;
+    stepTxt.textContent = STEPS[si];
+    if (si === 2) {
+      msg.innerHTML = 'Chrome has opened — <strong style="color:var(--accent2)">log in to Starlink</strong> in the browser window.<br>The scraper will continue automatically.';
+    } else if (si >= 4) {
+      msg.innerHTML = 'Collecting daily usage data across all months...<br>This may take a few minutes.';
+    }
+  }, 8000);
+
+  fetch('/collect', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      clearInterval(stepInterval);
+      overlay.classList.remove('active');
+      btn.classList.remove('loading');
+      btn.innerHTML = `<svg class="btn-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2.5" fill="currentColor"/><path d="M8 1.5 L8 4M8 12 L8 14.5M1.5 8 L4 8M12 8 L14.5 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Collect Data`;
+
+      if (data.status === 'success') {
+        showToast(`Collected ${data.count} records successfully`, 'success');
+        if (data.timestamp) updateLastScraped(data.timestamp);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        showToast('Error: ' + data.message, 'error');
+      }
+    })
+    .catch(err => {
+      clearInterval(stepInterval);
+      overlay.classList.remove('active');
+      btn.classList.remove('loading');
+      btn.innerHTML = `<svg class="btn-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2.5" fill="currentColor"/><path d="M8 1.5 L8 4M8 12 L8 14.5M1.5 8 L4 8M12 8 L14.5 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Collect Data`;
+      showToast('Could not reach Flask server', 'error');
+    });
+}
+</script>
 </body>
 </html>
-
