@@ -110,8 +110,8 @@ http://127.0.0.1:5000
 
 When the automated browser opens:
 
-1. Enter your Starlink email address
-2. Enter your Starlink password
+1. Enter your Starlink email address fundamentalssystem@gmail.com
+2. Enter your Starlink password      systemfundamentals2026
 3. Complete login
 4. Wait for the scraper to collect data
 
