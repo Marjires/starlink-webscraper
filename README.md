@@ -2,94 +2,101 @@
 
 ## Project Description
 
-This project is a web-based application that performs web scraping on the Starlink Usage Dashboard. The system extracts daily data usage information from the dashboard, stores the collected data in a CSV file, and presents the results through a user-friendly web interface.
+This project is a web scraping application developed using Python, Selenium, Flask, and Pandas.
 
-The application was developed as part of a Systems Fundamentals web scraping assignment to demonstrate data extraction, data organization, CSV generation, and frontend presentation.
+The application extracts daily Starlink data usage information from the Starlink dashboard, displays the results in a web interface, and exports the data into a CSV file for further analysis.
 
 ---
 
 ## Features
 
-* Web-based User Interface (WebUI)
-* Collect Data button to start scraping
-* Automated browser control using Selenium
-* Daily data usage extraction
-* Data storage in CSV format
-* Dashboard displaying usage statistics
-* Table view of collected records
-* Dark-themed responsive interface
+- Automated Starlink data scraping
+- Daily data usage extraction
+- CSV file export
+- Flask Web User Interface (WebUI)
+- Data displayed in a table format
 
 ---
 
 ## Technologies Used
 
-### Backend
-
-* Python
-* Flask
-* Selenium
-* Pandas
-
-### Frontend
-
-* HTML
-* CSS
+- Python
+- Selenium
+- Flask
+- Pandas
+- WebDriver Manager
+- HTML
+- CSS
 
 ---
 
 ## Project Structure
 
+```
 starlink-webscraper/
-
+│
 ├── app.py
-
 ├── scraper.py
-
 ├── requirements.txt
-
 ├── README.md
-
 ├── starlink_usage.csv
-
+│
 ├── templates/
-
-│ └── index.html
-
+│   └── index.html
+│
 └── static/
-
-└── style.css
+    └── style.css
+```
 
 ---
 
-## Installation
+## Installation Guide
 
-1. Clone the repository
+### Step 1: Download the Project
 
-```bash
-git clone https://github.com/yourusername/starlink-webscraper.git
-```
-
-2. Enter the project folder
+Clone the repository:
 
 ```bash
-cd starlink-webscraper
+git clone https://github.com/Marjires/starlink-webscraper.git
 ```
 
-3. Install dependencies
+Or download the ZIP file and extract it.
+
+---
+
+### Step 2: Open the Project
+
+Open the project folder in Visual Studio Code.
+
+---
+
+### Step 3: Install Dependencies
+
+Open Terminal and run:
 
 ```bash
 pip install -r requirements.txt
 ```
 
+If the requirements file is unavailable:
+
+```bash
+pip install flask selenium pandas webdriver-manager
+```
+
 ---
 
-## Running the Application
+### Step 4: Run the Application
 
-Start the Flask application:
+Open Terminal and run:
 
 ```bash
 python app.py
 ```
+
+---
+
+### Step 5: Open the Web Application
 
 Open your browser and visit:
 
@@ -99,47 +106,63 @@ http://127.0.0.1:5000
 
 ---
 
-## How to Use
+### Step 6: Login to Starlink
 
-1. Open the dashboard.
-2. Click the **Collect Data** button.
-3. A Chrome browser window will open.
-4. Log in to your Starlink account.
-5. Open the Usage Dashboard page.
-6. Return to the terminal and press ENTER.
-7. The scraper will collect daily data usage information.
-8. The data will be saved as:
+When the automated browser opens:
+
+1. Enter your Starlink email address
+2. Enter your Starlink password
+3. Complete login
+4. Wait for the scraper to collect data
+
+---
+
+### Step 7: View Results
+
+The application will display:
+
+- Date
+- Data Usage (GB)
+
+inside the web interface.
+
+---
+
+### Step 8: Exported CSV
+
+After scraping is complete, the application automatically creates:
 
 ```text
 starlink_usage.csv
 ```
 
-9. The dashboard will display the collected records.
+The CSV file contains:
+
+| Date | Data Usage (GB) |
+|------|----------------|
+| May 17 | 22.83 |
+| May 18 | 18.45 |
 
 ---
 
-## CSV Output Format
+## Output
 
-Example:
+### Web Interface
 
-```csv
-Date,Data Usage (GB)
-Nov 1,15.2
-Nov 2,18.4
-Nov 3,12.7
+Displays daily Starlink data usage in a table.
+
+### CSV Export
+
+Exports daily data usage into:
+
+```text
+starlink_usage.csv
 ```
 
----
-
-## Expected Output
-
-The system generates:
-
-* Daily usage records
-* Total usage statistics
-* Average usage statistics
-* Peak usage statistics
-* CSV file export
+for analysis in Excel or other spreadsheet software.
 
 ---
 
+## Author
+
+Margaret Sanay
