@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Starlink Usage Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+
+        <h1>
+            STAR<span>LINK</span> USAGE
+        </h1>
+
+        <p>
+            Daily Data Consumption Dashboard
+        </p>
+
+        <form
+            action="/collect-data"
+            method="POST">
+
+            <button
+                type="submit"
+                class="btn">
+
+                Collect Data
+
+            </button>
+
+        </form>
+
+    </header>
+
+    <div class="stats">
+
+        <div class="card">
+            <h2>{{ total }}</h2>
+            <p>Total Usage (GB)</p>
+        </div>
+
+        <div class="card">
+            <h2>{{ avg }}</h2>
+            <p>Average Usage (GB)</p>
+        </div>
+
+        <div class="card">
+            <h2>{{ peak }}</h2>
+            <p>Peak Usage (GB)</p>
+        </div>
+
+        <div class="card">
+            <h2>{{ days }}</h2>
+            <p>Days Tracked</p>
+        </div>
+
+    </div>
+
+    <div class="table-container">
+
+        <h2>Daily Breakdown</h2>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Usage (GB)</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for row in records %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        {{ row['Date'] }}
+                    </td>
+
+                    <td>
+                        {{ row['Data Usage (GB)'] }}
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+
