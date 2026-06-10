@@ -23,6 +23,11 @@ def scrape_starlink():
         "--start-maximized"
     )
 
+    # Suppress Chrome internal logs (harmless but noisy)
+    chrome_options.add_argument("--log-level=3")
+    chrome_options.add_argument("--silent")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+
     driver = webdriver.Chrome(
         options=chrome_options
     )
@@ -252,4 +257,3 @@ if __name__ == "__main__":
     df = scrape_starlink()
 
     print(df.head())
-

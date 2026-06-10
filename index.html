@@ -968,24 +968,29 @@
   </footer>
 </div>
 
+<script id="records-data" type="application/json">
+{{ records | tojson | safe }}
+</script>
+
 <script>
-
-const RAW = [
-
-{% for row in records %}
-{
-    date: "{{ row['Date'] }}",
-    gb: parseFloat("{{ row['Data Usage (GB)'] }}")
-},
-{% endfor %}
-
-];
+const RAW = JSON.parse(
+    document.getElementById('records-data').textContent
+).map(item => ({
+    date: item.Date,
+    gb: parseFloat(item["Data Usage (GB)"])
+}));
 
 const MONTH_ORDER = ['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+
 const MONTH_COLORS = {
-  Nov: '#63b3ed', Dec: '#4fd1c5', Jan: '#f6ad55',
-  Feb: '#fc8181', Mar: '#68d391', Apr: '#b794f4',
-  May: '#f687b3', Jun: '#76e4f7'
+    Nov: '#63b3ed',
+    Dec: '#4fd1c5',
+    Jan: '#f6ad55',
+    Feb: '#fc8181',
+    Mar: '#68d391',
+    Apr: '#b794f4',
+    May: '#f687b3',
+    Jun: '#76e4f7'
 };
 
 function getMonth(d) { return d.date.split(' ')[0]; }
